@@ -5,9 +5,11 @@
 //! - Dependency bridge mapping Cargo.lock to registry sources
 //! - Semantic gravity ranking for intelligent result ordering
 //! - Call-site teleportation (local usage mapping for external symbols)
+//! - MCP server for LLM tool integration
 
 pub mod dependency;
 pub mod gravity;
+pub mod mcp;
 pub mod parser;
 pub mod types;
 

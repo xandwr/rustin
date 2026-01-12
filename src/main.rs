@@ -5,6 +5,7 @@
 //! - Dependency bridge to cargo registry sources
 //! - Semantic gravity ranking for intelligent search
 //! - Call-site teleportation (local usage of external symbols)
+//! - MCP server for LLM tool integration
 
 use clap::{Parser, Subcommand};
 use rustin::{DependencyBridge, SemanticGravity};
@@ -65,6 +66,9 @@ enum Commands {
         #[arg(short, long, default_value = "20")]
         limit: usize,
     },
+
+    /// Start MCP server over stdio for LLM tool integration
+    Serve,
 }
 
 fn main() {
@@ -78,7 +82,17 @@ fn main() {
             .join(&cli.path)
     };
 
-    // Initialize components
+    // Handle MCP serve command separately (runs async)
+    if let Some(Commands::Serve) = &cli.command {
+        let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime");
+        if let Err(e) = rt.block_on(rustin::mcp::run_mcp_server(project_root)) {
+            eprintln!("MCP server error: {}", e);
+            std::process::exit(1);
+        }
+        return;
+    }
+
+    // Initialize components for non-MCP commands
     let mut gravity = SemanticGravity::new();
     let mut dep_bridge = match DependencyBridge::new(&project_root) {
         Ok(bridge) => Some(bridge),
@@ -113,6 +127,7 @@ fn main() {
         Some(Commands::Deps { limit }) => {
             cmd_deps(&mut dep_bridge, limit);
         }
+        Some(Commands::Serve) => unreachable!(), // Handled above
         None => {
             // Default behavior: show summary
             cmd_analyze(&gravity, &mut dep_bridge, false, 10, cli.quiet);
