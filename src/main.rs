@@ -1,4 +1,4 @@
-//! Rustin - Rust Architecture Analysis Tool
+//! cargomap - Rust Architecture Analysis Tool
 //!
 //! A CLI tool for analyzing Rust project architecture with:
 //! - Resilient partial parsing (handles broken code)
@@ -7,12 +7,12 @@
 //! - Call-site teleportation (local usage of external symbols)
 //! - MCP server for LLM tool integration
 
+use cargomap::{DependencyBridge, SemanticGravity};
 use clap::{Parser, Subcommand};
-use rustin::{DependencyBridge, SemanticGravity};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "rustin")]
+#[command(name = "cargomap")]
 #[command(author, version, about = "Rust Architecture Analysis Tool", long_about = None)]
 struct Cli {
     /// Path to the Rust project to analyze
@@ -85,7 +85,7 @@ fn main() {
     // Handle MCP serve command separately (runs async)
     if let Some(Commands::Serve) = &cli.command {
         let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime");
-        if let Err(e) = rt.block_on(rustin::mcp::run_mcp_server(project_root)) {
+        if let Err(e) = rt.block_on(cargomap::mcp::run_mcp_server(project_root)) {
             eprintln!("MCP server error: {}", e);
             std::process::exit(1);
         }
@@ -394,32 +394,32 @@ impl AnalysisSession {
     }
 
     /// Search for items by name
-    fn search(&self, query: &str) -> Vec<rustin::WorkSiteScore> {
+    fn search(&self, query: &str) -> Vec<cargomap::WorkSiteScore> {
         self.gravity.search(query)
     }
 
     /// Get all implementations for a type
-    fn get_impls(&self, type_name: &str) -> Vec<&rustin::ParsedItem> {
+    fn get_impls(&self, type_name: &str) -> Vec<&cargomap::ParsedItem> {
         self.gravity.get_impls_for_type(type_name)
     }
 
     /// Find where a function is called
-    fn find_callers(&self, fn_name: &str) -> Vec<&rustin::CallSite> {
+    fn find_callers(&self, fn_name: &str) -> Vec<&cargomap::CallSite> {
         self.gravity.find_call_sites(fn_name)
     }
 
     /// Resolve an external crate path
-    fn resolve_external(&mut self, path: &str) -> Option<rustin::dependency::ResolvedPath> {
+    fn resolve_external(&mut self, path: &str) -> Option<cargomap::dependency::ResolvedPath> {
         self.dep_bridge.as_mut()?.resolve_path(path)
     }
 
     /// Get local usages of an external symbol
-    fn get_local_usages(&self, path: &str) -> Vec<&rustin::ExternalReference> {
+    fn get_local_usages(&self, path: &str) -> Vec<&cargomap::ExternalReference> {
         self.gravity.get_external_usages(path)
     }
 
     /// Get the project summary
-    fn summary(&self) -> rustin::gravity::ProjectSummary {
+    fn summary(&self) -> cargomap::gravity::ProjectSummary {
         self.gravity.summarize()
     }
 }

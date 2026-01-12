@@ -1,4 +1,4 @@
-//! Rustin - Rust Architecture Analysis Tool
+//! cargomap - Rust Architecture Analysis Tool
 //!
 //! A resilient code analysis tool that provides:
 //! - Partial parsing (LSP-Lite) that handles broken code gracefully

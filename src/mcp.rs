@@ -1,6 +1,6 @@
-//! MCP Server module for Rustin
+//! MCP Server module for cargomap
 //!
-//! Provides an MCP (Model Context Protocol) server that exposes Rustin's
+//! Provides an MCP (Model Context Protocol) server that exposes cargomap's
 //! code analysis capabilities as tools for LLM clients.
 
 use async_trait::async_trait;
@@ -17,19 +17,19 @@ use std::sync::Arc;
 
 use crate::SemanticGravity;
 
-/// MCP Server handler for Rustin analysis tools
-pub struct RustinServerHandler {
+/// MCP Server handler for cargomap analysis tools
+pub struct cargomapServerHandler {
     project_root: PathBuf,
 }
 
-impl RustinServerHandler {
+impl cargomapServerHandler {
     pub fn new(project_root: PathBuf) -> Self {
         Self { project_root }
     }
 }
 
 #[async_trait]
-impl ServerHandler for RustinServerHandler {
+impl ServerHandler for cargomapServerHandler {
     async fn handle_list_tools_request(
         &self,
         _params: Option<PaginatedRequestParams>,
@@ -38,7 +38,7 @@ impl ServerHandler for RustinServerHandler {
         Ok(ListToolsResult {
             meta: None,
             next_cursor: None,
-            tools: RustinTools::tools(),
+            tools: cargomapTools::tools(),
         })
     }
 
@@ -47,14 +47,15 @@ impl ServerHandler for RustinServerHandler {
         params: CallToolRequestParams,
         _runtime: Arc<dyn McpServer>,
     ) -> Result<CallToolResult, CallToolError> {
-        let tool_params: RustinTools = RustinTools::try_from(params).map_err(CallToolError::new)?;
+        let tool_params: cargomapTools =
+            cargomapTools::try_from(params).map_err(CallToolError::new)?;
 
         match tool_params {
-            RustinTools::AnalyzeStruct(tool) => tool.call_tool(&self.project_root),
-            RustinTools::SearchCode(tool) => tool.call_tool(&self.project_root),
-            RustinTools::GetSummary(tool) => tool.call_tool(&self.project_root),
-            RustinTools::FindCallers(tool) => tool.call_tool(&self.project_root),
-            RustinTools::GetExternalUsages(tool) => tool.call_tool(&self.project_root),
+            cargomapTools::AnalyzeStruct(tool) => tool.call_tool(&self.project_root),
+            cargomapTools::SearchCode(tool) => tool.call_tool(&self.project_root),
+            cargomapTools::GetSummary(tool) => tool.call_tool(&self.project_root),
+            cargomapTools::FindCallers(tool) => tool.call_tool(&self.project_root),
+            cargomapTools::GetExternalUsages(tool) => tool.call_tool(&self.project_root),
         }
     }
 }
@@ -476,7 +477,7 @@ impl GetExternalUsages {
 
 // Generate the tool_box enum
 tool_box!(
-    RustinTools,
+    cargomapTools,
     [
         AnalyzeStruct,
         SearchCode,
@@ -497,9 +498,9 @@ pub async fn run_mcp_server(project_root: PathBuf) -> Result<(), Box<dyn std::er
 
     let server_details = InitializeResult {
         server_info: Implementation {
-            name: "rustin".into(),
+            name: "cargomap".into(),
             version: env!("CARGO_PKG_VERSION").into(),
-            title: Some("Rustin - Rust Architecture Analysis".into()),
+            title: Some("cargomap - Rust Architecture Analysis".into()),
             description: Some("MCP server for analyzing Rust project architecture with semantic gravity ranking".into()),
             icons: vec![],
             website_url: None,
@@ -514,7 +515,7 @@ pub async fn run_mcp_server(project_root: PathBuf) -> Result<(), Box<dyn std::er
     };
 
     let transport = StdioTransport::new(TransportOptions::default())?;
-    let handler = RustinServerHandler::new(project_root);
+    let handler = cargomapServerHandler::new(project_root);
 
     let server: Arc<ServerRuntime> = server_runtime::create_server(McpServerOptions {
         server_details,
